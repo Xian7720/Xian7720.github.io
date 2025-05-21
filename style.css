@@ -6,7 +6,7 @@ body {
 
 #pixel-board {
   display: grid;
-  grid-template-columns: repeat(32, 0px); /* 가로 16칸 */
+  grid-template-columns: repeat(32, 10px); /* 가로 16칸 */
   grid-template-rows: repeat(32, 20px);    /* 세로 16칸 */
   gap: 1px;
   margin: 20px auto;
