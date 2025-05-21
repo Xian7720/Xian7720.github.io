@@ -1,0 +1,22 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background-color: #f9f9f9;
+}
+
+#pixel-board {
+  display: grid;
+  grid-template-columns: repeat(32, 20px); /* 가로 16칸 */
+  grid-template-rows: repeat(32, 20px);    /* 세로 16칸 */
+  gap: 1px;
+  margin: 20px auto;
+  width: fit-content;
+}
+
+.pixel {
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
