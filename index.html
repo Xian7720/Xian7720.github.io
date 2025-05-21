@@ -74,8 +74,8 @@
     const clearBtn = document.getElementById("clear-btn");
 
     const PIXEL_COUNT = 32 * 32;
-    let isDrawing = false; // 마우스 또는 터치 누른 상태
-    let currentMode = 'draw'; // 'draw' or 'erase'
+    let isDrawing = false;
+    let currentMode = 'draw';
     let currentColor = colorPicker.value;
 
     let pixelColors = new Array(PIXEL_COUNT).fill('#ffffff');
@@ -162,37 +162,41 @@
       }
     }
 
-    // 터치 관련 처리
-    // 터치가 발생한 좌표 기준으로 픽셀 div를 찾아서 칠함
+    // 터치 이벤트 처리
     function handleTouchEvent(e) {
-      e.preventDefault(); // 스크롤 방지
-      const touches = e.touches;
-      for (let i = 0; i < touches.length; i++) {
-        const touch = touches[i];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (target && target.classList.contains('pixel')) {
-          const index = parseInt(target.dataset.index, 10);
-          setPixelColor(index);
-        }
+      if (e.touches.length > 1) {
+        // 두 손가락 이상이면 색칠하지 않음 (핀치 줌 허용)
+        return;
+      }
+      e.preventDefault();
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (target && target.classList.contains('pixel')) {
+        const index = parseInt(target.dataset.index, 10);
+        setPixelColor(index);
       }
     }
 
     board.addEventListener('touchstart', (e) => {
-      isDrawing = true;
-      handleTouchEvent(e);
+      if (e.touches.length === 1) {
+        isDrawing = true;
+        handleTouchEvent(e);
+      }
     }, { passive: false });
 
     board.addEventListener('touchmove', (e) => {
-      handleTouchEvent(e);
+      if (e.touches.length === 1) {
+        handleTouchEvent(e);
+      }
     }, { passive: false });
 
     board.addEventListener('touchend', (e) => {
-      isDrawing = false;
+      if (e.touches.length === 0) {
+        isDrawing = false;
+      }
     });
 
-    // 초기 로드 시 저장 데이터 불러오기
     loadFromStorage();
-
   </script>
 
 </body>
