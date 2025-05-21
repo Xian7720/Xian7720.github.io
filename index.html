@@ -1,13 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Pixel art</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+    }
+
+    #pixel-board {
+      display: grid;
+      grid-template-columns: repeat(32, 20px); /* 가로 32칸 */
+      grid-template-rows: repeat(32, 20px);    /* 세로 32칸 */
+      gap: 1px;
+      margin: 20px auto;
+      width: fit-content;
+    }
+
+    .pixel {
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .pixel.black {
+      background-color: black !important;
+    }
+  </style>
 </head>
 <body>
+  <h1>Pixel Art Board</h1>
   <div id="pixel-board"></div>
 
-  <script src="script.js"></script>
+  <script>
+    const board = document.getElementById("pixel-board");
+
+    for (let i = 0; i < 32 * 32; i++) {
+      const pixel = document.createElement("div");
+      pixel.classList.add("pixel");
+
+      pixel.addEventListener("click", () => {
+        pixel.classList.toggle("black");
+      });
+
+      board.appendChild(pixel);
+    }
+  </script>
 </body>
 </html>
