@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pixel Art</title>
+  <title>Pixel Art with Touch & Mouse Support</title>
   <style>
     body {
       font-family: sans-serif;
       text-align: center;
       background-color: #f9f9f9;
       user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
     }
 
     #controls {
@@ -37,6 +39,7 @@
       gap: 1px;
       margin: 20px auto;
       width: fit-content;
+      touch-action: none; /* 터치 스크롤 막기 */
     }
 
     .pixel {
@@ -46,12 +49,13 @@
       border: 1px solid #ccc;
       cursor: pointer;
       transition: background-color 0.2s;
+      touch-action: none;
     }
   </style>
 </head>
 <body>
 
-  <h1>Pixel Art Board</h1>
+  <h1>Pixel Art Board (Mouse & Touch Support)</h1>
 
   <div id="controls">
     <button id="draw-btn" aria-pressed="true">Draw</button>
@@ -70,23 +74,16 @@
     const clearBtn = document.getElementById("clear-btn");
 
     const PIXEL_COUNT = 32 * 32;
-    let isMouseDown = false;
+    let isDrawing = false; // 마우스 또는 터치 누른 상태
     let currentMode = 'draw'; // 'draw' or 'erase'
     let currentColor = colorPicker.value;
 
-    // 저장된 픽셀 색상 배열 (초기값 흰색)
     let pixelColors = new Array(PIXEL_COUNT).fill('#ffffff');
-
-    // localStorage 키
     const STORAGE_KEY = 'pixelArtColors';
 
-    // 마우스 상태 추적
-    document.body.addEventListener('mousedown', () => {
-      isMouseDown = true;
-    });
-    document.body.addEventListener('mouseup', () => {
-      isMouseDown = false;
-    });
+    // 마우스 이벤트
+    document.body.addEventListener('mousedown', () => { isDrawing = true; });
+    document.body.addEventListener('mouseup', () => { isDrawing = false; });
 
     drawBtn.addEventListener('click', () => {
       currentMode = 'draw';
@@ -105,34 +102,29 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      // 모든 픽셀을 흰색으로 초기화
       pixelColors.fill('#ffffff');
       updateBoardColors();
       saveToStorage();
     });
 
-    // 픽셀 생성 및 이벤트 연결
+    // 픽셀 생성
     for (let i = 0; i < PIXEL_COUNT; i++) {
       const pixel = document.createElement("div");
       pixel.classList.add("pixel");
-      pixel.dataset.index = i; // 인덱스 저장
+      pixel.dataset.index = i;
 
-      // 클릭 시 색 변경 및 저장
       pixel.addEventListener("click", () => {
         setPixelColor(i);
       });
 
-      // 드래그 시 색 변경 및 저장
       pixel.addEventListener("mouseenter", () => {
-        if (isMouseDown) {
-          setPixelColor(i);
-        }
+        if (isDrawing) setPixelColor(i);
       });
 
       board.appendChild(pixel);
     }
 
-    // 픽셀 색상을 적용하는 함수
+    // 픽셀 색상 적용 함수
     function setPixelColor(i) {
       const pixel = board.children[i];
       if (currentMode === 'draw') {
@@ -145,19 +137,16 @@
       saveToStorage();
     }
 
-    // 저장된 배열을 보드에 반영하는 함수
     function updateBoardColors() {
       for (let i = 0; i < PIXEL_COUNT; i++) {
         board.children[i].style.backgroundColor = pixelColors[i];
       }
     }
 
-    // localStorage에 저장
     function saveToStorage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(pixelColors));
     }
 
-    // localStorage에서 불러오기
     function loadFromStorage() {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
@@ -168,12 +157,40 @@
             updateBoardColors();
           }
         } catch (e) {
-          console.error('Failed to parse saved pixel colors', e);
+          console.error('Failed to load pixel colors', e);
         }
       }
     }
 
-    // 초기 실행 시 저장된 데이터 불러오기
+    // 터치 관련 처리
+    // 터치가 발생한 좌표 기준으로 픽셀 div를 찾아서 칠함
+    function handleTouchEvent(e) {
+      e.preventDefault(); // 스크롤 방지
+      const touches = e.touches;
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches[i];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target && target.classList.contains('pixel')) {
+          const index = parseInt(target.dataset.index, 10);
+          setPixelColor(index);
+        }
+      }
+    }
+
+    board.addEventListener('touchstart', (e) => {
+      isDrawing = true;
+      handleTouchEvent(e);
+    }, { passive: false });
+
+    board.addEventListener('touchmove', (e) => {
+      handleTouchEvent(e);
+    }, { passive: false });
+
+    board.addEventListener('touchend', (e) => {
+      isDrawing = false;
+    });
+
+    // 초기 로드 시 저장 데이터 불러오기
     loadFromStorage();
 
   </script>
