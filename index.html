@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pixel Art</title>
+  <title>Pixel Art with Pinch Zoom & Touch Draw</title>
   <style>
     body {
       font-family: sans-serif;
@@ -12,18 +12,15 @@
       -webkit-user-select: none;
       -ms-user-select: none;
     }
-
     #controls {
       margin: 20px;
     }
-
     button {
       padding: 8px 16px;
       margin: 0 5px;
       cursor: pointer;
       font-size: 16px;
     }
-
     #color-picker {
       width: 40px;
       height: 40px;
@@ -31,7 +28,6 @@
       border: 1px solid #ccc;
       cursor: pointer;
     }
-
     #pixel-board {
       display: grid;
       grid-template-columns: repeat(32, 20px);
@@ -41,7 +37,6 @@
       width: fit-content;
       touch-action: none; /* 터치 스크롤 막기 */
     }
-
     .pixel {
       width: 20px;
       height: 20px;
@@ -55,7 +50,7 @@
 </head>
 <body>
 
-  <h1>Pixel Art Board</h1>
+  <h1>Pixel Art Board (Touch + Pinch Zoom Support)</h1>
 
   <div id="controls">
     <button id="draw-btn" aria-pressed="true">Draw</button>
@@ -81,7 +76,6 @@
     let pixelColors = new Array(PIXEL_COUNT).fill('#ffffff');
     const STORAGE_KEY = 'pixelArtColors';
 
-    // 마우스 이벤트
     document.body.addEventListener('mousedown', () => { isDrawing = true; });
     document.body.addEventListener('mouseup', () => { isDrawing = false; });
 
@@ -107,7 +101,6 @@
       saveToStorage();
     });
 
-    // 픽셀 생성
     for (let i = 0; i < PIXEL_COUNT; i++) {
       const pixel = document.createElement("div");
       pixel.classList.add("pixel");
@@ -124,7 +117,6 @@
       board.appendChild(pixel);
     }
 
-    // 픽셀 색상 적용 함수
     function setPixelColor(i) {
       const pixel = board.children[i];
       if (currentMode === 'draw') {
@@ -162,13 +154,12 @@
       }
     }
 
-    // 터치 이벤트 처리
     function handleTouchEvent(e) {
-      if (e.touches.length > 1) {
-        // 두 손가락 이상이면 색칠하지 않음 (핀치 줌 허용)
+      if (e.touches.length !== 1) {
+        // 2개 이상 터치면 확대/축소 허용, 색칠 안 함
         return;
       }
-      e.preventDefault();
+      e.preventDefault(); // 1개 터치일 때만 드로잉 처리
       const touch = e.touches[0];
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
       if (target && target.classList.contains('pixel')) {
@@ -181,6 +172,8 @@
       if (e.touches.length === 1) {
         isDrawing = true;
         handleTouchEvent(e);
+      } else {
+        isDrawing = false; // 2개 이상이면 드로잉 끔
       }
     }, { passive: false });
 
