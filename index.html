@@ -11,20 +11,37 @@
       user-select: none;
       -webkit-user-select: none;
       -ms-user-select: none;
-      margin: 0;
-      padding: 0;
     }
+
+    #controls {
+      margin: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 0 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #color-picker {
+      width: 40px;
+      height: 40px;
+      vertical-align: middle;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
     #pixel-board {
       display: grid;
-      grid-template-columns: repeat(32, 20px);
-      grid-template-rows: repeat(32, 20px);
+      grid-template-columns: repeat(16, 20px);
+      grid-template-rows: repeat(16, 20px);
       gap: 1px;
       margin: 20px auto;
       width: fit-content;
-      touch-action: manipulation; /* 핀치 줌 허용하면서 클릭 가능 */
-      -ms-touch-action: manipulation;
-      -webkit-touch-action: manipulation;
+      touch-action: none; /* 터치 스크롤 막기 */
     }
+
     .pixel {
       width: 20px;
       height: 20px;
@@ -32,7 +49,7 @@
       border: 1px solid #ccc;
       cursor: pointer;
       transition: background-color 0.2s;
-      touch-action: none; /* 개별 픽셀은 터치동작 차단 */
+      touch-action: none;
     }
   </style>
 </head>
@@ -40,19 +57,96 @@
 
   <h1>Pixel Art Board</h1>
 
+  <div id="controls">
+    <button id="draw-btn" aria-pressed="true">Draw</button>
+    <button id="erase-btn" aria-pressed="false">Erase</button>
+    <input type="color" id="color-picker" value="#000000" title="Choose color" />
+    <button id="clear-btn">Clear</button>
+  </div>
+
   <div id="pixel-board"></div>
 
   <script>
     const board = document.getElementById("pixel-board");
-    const PIXEL_COUNT = 32 * 32;
-    let isDrawing = false;
-    let currentColor = 'black';
+    const drawBtn = document.getElementById("draw-btn");
+    const eraseBtn = document.getElementById("erase-btn");
+    const colorPicker = document.getElementById("color-picker");
+    const clearBtn = document.getElementById("clear-btn");
 
-    // 픽셀 색상 저장 배열
+    const PIXEL_COUNT = 16 * 16;
+    let isDrawing = false;
+    let currentMode = 'draw';
+    let currentColor = colorPicker.value;
+
     let pixelColors = new Array(PIXEL_COUNT).fill('#ffffff');
     const STORAGE_KEY = 'pixelArtColors';
 
-    // 로컬스토리지에서 불러오기
+    // 마우스 이벤트
+    document.body.addEventListener('mousedown', () => { isDrawing = true; });
+    document.body.addEventListener('mouseup', () => { isDrawing = false; });
+
+    drawBtn.addEventListener('click', () => {
+      currentMode = 'draw';
+      drawBtn.setAttribute('aria-pressed', 'true');
+      eraseBtn.setAttribute('aria-pressed', 'false');
+    });
+
+    eraseBtn.addEventListener('click', () => {
+      currentMode = 'erase';
+      drawBtn.setAttribute('aria-pressed', 'false');
+      eraseBtn.setAttribute('aria-pressed', 'true');
+    });
+
+    colorPicker.addEventListener('input', (e) => {
+      currentColor = e.target.value;
+    });
+
+    clearBtn.addEventListener('click', () => {
+      pixelColors.fill('#ffffff');
+      updateBoardColors();
+      saveToStorage();
+    });
+
+    // 픽셀 생성
+    for (let i = 0; i < PIXEL_COUNT; i++) {
+      const pixel = document.createElement("div");
+      pixel.classList.add("pixel");
+      pixel.dataset.index = i;
+
+      pixel.addEventListener("click", () => {
+        setPixelColor(i);
+      });
+
+      pixel.addEventListener("mouseenter", () => {
+        if (isDrawing) setPixelColor(i);
+      });
+
+      board.appendChild(pixel);
+    }
+
+    // 픽셀 색상 적용 함수
+    function setPixelColor(i) {
+      const pixel = board.children[i];
+      if (currentMode === 'draw') {
+        pixel.style.backgroundColor = currentColor;
+        pixelColors[i] = currentColor;
+      } else {
+        pixel.style.backgroundColor = '#ffffff';
+        pixelColors[i] = '#ffffff';
+      }
+      saveToStorage();
+    }
+
+    function updateBoardColors() {
+      for (let i = 0; i < PIXEL_COUNT; i++) {
+        board.children[i].style.backgroundColor = pixelColors[i];
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pixelColors));
+    }
+
     function loadFromStorage() {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
@@ -62,87 +156,41 @@
             pixelColors = colors;
             updateBoardColors();
           }
-        } catch {
-          // 무시
+        } catch (e) {
+          console.error('Failed to load pixel colors', e);
         }
       }
     }
 
-    // 저장
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pixelColors));
-    }
-
-    // 픽셀 색상 업데이트
-    function updateBoardColors() {
-      for (let i = 0; i < PIXEL_COUNT; i++) {
-        board.children[i].style.backgroundColor = pixelColors[i];
-      }
-    }
-
-    // 색상 설정
-    function setPixelColor(i) {
-      pixelColors[i] = currentColor;
-      board.children[i].style.backgroundColor = currentColor;
-      saveToStorage();
-    }
-
-    // 보드 초기화 및 이벤트 세팅
-    for (let i = 0; i < PIXEL_COUNT; i++) {
-      const pixel = document.createElement("div");
-      pixel.classList.add("pixel");
-      pixel.dataset.index = i;
-
-      pixel.addEventListener("mousedown", () => {
-        isDrawing = true;
-        setPixelColor(i);
-      });
-
-      pixel.addEventListener("mouseenter", () => {
-        if (isDrawing) setPixelColor(i);
-      });
-
-      pixel.addEventListener("mouseup", () => {
-        isDrawing = false;
-      });
-
-      board.appendChild(pixel);
-    }
-
-    // 마우스 밖에서 마우스 업 처리
-    document.body.addEventListener("mouseup", () => {
-      isDrawing = false;
-    });
-
-    // 터치 이벤트 핸들러
+    // 터치 이벤트 처리
     function handleTouchEvent(e) {
-      if (e.touches.length !== 1) return; // 1개 터치 아니면 무시
-
+      if (e.touches.length > 1) {
+        // 두 손가락 이상이면 색칠하지 않음 (핀치 줌 허용)
+        return;
+      }
       e.preventDefault();
       const touch = e.touches[0];
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (target && target.classList.contains("pixel")) {
+      if (target && target.classList.contains('pixel')) {
         const index = parseInt(target.dataset.index, 10);
         setPixelColor(index);
       }
     }
 
-    board.addEventListener("touchstart", (e) => {
+    board.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         isDrawing = true;
         handleTouchEvent(e);
-      } else {
-        isDrawing = false;
       }
     }, { passive: false });
 
-    board.addEventListener("touchmove", (e) => {
-      if (isDrawing && e.touches.length === 1) {
+    board.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
         handleTouchEvent(e);
       }
     }, { passive: false });
 
-    board.addEventListener("touchend", (e) => {
+    board.addEventListener('touchend', (e) => {
       if (e.touches.length === 0) {
         isDrawing = false;
       }
